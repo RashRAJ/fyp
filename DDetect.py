@@ -23,11 +23,11 @@ predict = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
 
 (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["left_eye"]
 (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
-cap=cv2.VideoCapture(0)
+camera=cv2.VideoCapture(0)
 
 flag=0
 while True:
-	ret, frame=cap.read()
+	ret, frame=camera.read()
 	frame = imutils.resize(frame, width=450)
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	subjects = detect(gray, 0)
@@ -59,4 +59,4 @@ while True:
 	if key == ord("q"):
 		break
 cv2.destroyAllWindows()
-cap.release() 
+camera.release() 
