@@ -1,6 +1,6 @@
 from flask import Flask, render_template, Response
 import cv2
-
+import detect
 
 
 app=Flask(__name__)
@@ -27,6 +27,7 @@ def index():
 
 @app.route('/video')
 def video():
+    detect.detect()
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 if __name__=='__main__':
     app.run(debug=True)
