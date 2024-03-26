@@ -68,6 +68,7 @@ def generate_frames():
                         mixer.music.play()
                 else:
                     flag = 0
+                    mixer.music.pause()
             # cv2.imshow("Frame", frame)
             ret, buffer = cv2.imencode(".jpg", frame)
             frame = buffer.tobytes()
