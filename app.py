@@ -1,5 +1,6 @@
 from flask import Flask, render_template, Response, redirect, url_for, session, request, jsonify
 # from flask_mysqldb import MySQL
+from flask_cors import CORS
 import cv2
 import detector
 
@@ -12,6 +13,7 @@ import time
 
 
 app=Flask(__name__)
+cors = CORS(app)
 app.secret_key = 'my-secret-key'
 
 #MYSQL Configuration
