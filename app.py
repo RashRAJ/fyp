@@ -1,4 +1,5 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, redirect, url_for,session, request
+from flask_mysqldb import MySQL
 import cv2
 import detector
 
@@ -10,21 +11,17 @@ import dlib
 
 
 app=Flask(__name__)
-# camera = cv2.VideoCapture(0)
+app.secret_key = 'my-secret-key'
+
+#MYSQL Configuration
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'Drows_detectDB'
+
+mysql = MySQL(app)
 
 
-# without detector (default)
-# def generate_frames():
-#     while True:
-#         success,frame=camera.read()
-#         if not success:
-#             break
-#         else:
-#             # ret, buffer = cv2.imencode('.jpg', frame)
-#             # frame = buffer.tobytes()
-
-#         yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 def generate_frames():
     thresh = 0.25
@@ -59,13 +56,16 @@ def generate_frames():
                 cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
                 if ear < thresh:
                     flag += 1
-                    print (flag)
+                    # print (flag)
+                    alert_flag = 0
                     if flag >= frame_check:
                         cv2.putText(frame, "****************ALERT!****************", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                         cv2.putText(frame, "****************ALERT!****************", (10,325),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                        mixer.music.play()
+                        # mixer.music.play()
+                        alert_flag += 1
+                        print (alert_flag)
                 else:
                     flag = 0
                     mixer.music.pause()
@@ -84,10 +84,54 @@ def generate_frames():
 #     print("After detect")
         
 
+# @app.route('/')
+# def signup():
+#     return render_template('signup.html')
+
+# @app.route('/signup')
+# def signup():
+#     if 'username' in session:
+#         return render_template('signup.html', username=session['username'])
+#     else:
+
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if 'username' in session:
+        return render_template('index.html', username=session['username'])
+    else:
+        return render_template('index.html')
+    
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST': 
+        username = request.form['username']
+        pwd = request.form['password']
+        cur =   mysql.connection.cursor()
+        cur.execute(f"select username, password from tbl users where username = '(username]'")
+        user = cur. fetchone()
+        cur.close()
+        if user and pwd == user [1]:
+            session ['username' ] = user [0]
+            return redirect(url_for('home'))
+        else:
+            return render_template('login.html', error='Invalid username or password')
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST' : 
+        username = request.form['username']
+        pwd = request.form['password']
+        cur = mysql.connection.cursor()
+        cur.execute(f"insert into tbl_users (username, password) values ('(username)', '(pwd)')") 
+        mysql.connection.commit () 
+        cur.close()
+
+        return redirect(url_for ('login'))
+    return render_template('signup.html|')
+
+
 
 @app.route('/video')
 def video():

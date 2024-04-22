@@ -2,6 +2,12 @@
 <html>
     <body>
         <h1>live feed</h1>
+        {% if username %}
+        <p>hello, {{username}}! welcome</p>
+        <a href="/logout">logout</a>
+        {% else %}
+        <p>you are not logged in, please <a href="/login">Login</a> to access the homepage. </p>
+        {% endif %}
         <div>
             <img src="{{ url_for('video')}}" width="50%">
         </div>
