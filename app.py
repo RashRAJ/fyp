@@ -1,5 +1,5 @@
-from flask import Flask, render_template, Response, redirect, url_for,session, request
-from flask_mysqldb import MySQL
+from flask import Flask, render_template, Response, redirect, url_for, session, request, jsonify
+# from flask_mysqldb import MySQL
 import cv2
 import detector
 
@@ -8,22 +8,28 @@ from imutils import face_utils
 from pygame import mixer
 import imutils
 import dlib
+import time
 
 
 app=Flask(__name__)
 app.secret_key = 'my-secret-key'
 
 #MYSQL Configuration
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'Drows_detectDB'
+# app.config['MYSQL_HOST'] = 'localhost'
+# app.config['MYSQL_USER'] = 'root'
+# app.config['MYSQL_PASSWORD'] = ''
+# app.config['MYSQL_DB'] = 'Drows_detectDB'
 
-mysql = MySQL(app)
+# mysql = MySQL(app)
 
 
+camera_on = False
+eye_closure_timestamps = []
+drowsiness_level = "None"
 
 def generate_frames():
+    global camera_on, eye_closure_timestamps
+    camera = cv2.VideoCapture(0)
     thresh = 0.25
     frame_check = 20
     detect = dlib.get_frontal_face_detector()
@@ -31,11 +37,10 @@ def generate_frames():
 
     (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["left_eye"]
     (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
-    camera=cv2.VideoCapture(0)
 
     flag=0
-    while True:
-        success,frame=camera.read()
+    while camera_on and camera.isOpened():
+        success, frame = camera.read()
         if not success:
             break
         else:
@@ -57,15 +62,17 @@ def generate_frames():
                 if ear < thresh:
                     flag += 1
                     # print (flag)
-                    alert_flag = 0
+                    current_time = time.time()
+                    print(current_time)
+                    eye_closure_timestamps.append(current_time)
+                    eye_closure_timestamps = [t for t in eye_closure_timestamps if current_time - t <= 60]
+                    print(eye_closure_timestamps)
                     if flag >= frame_check:
                         cv2.putText(frame, "****************ALERT!****************", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                         cv2.putText(frame, "****************ALERT!****************", (10,325),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                         # mixer.music.play()
-                        alert_flag += 1
-                        print (alert_flag)
                 else:
                     flag = 0
                     mixer.music.pause()
@@ -74,6 +81,21 @@ def generate_frames():
             frame = buffer.tobytes()
         yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        # camera.release()
+    
+    update_drowsiness_level()
+
+def update_drowsiness_level():
+    global drowsiness_level, eye_closure_timestamps
+    count = len(eye_closure_timestamps)
+    if count >= 25:
+        drowsiness_level = "Critical"
+    elif count >= 15:
+        drowsiness_level = "Major"
+    elif count >= 5:
+        drowsiness_level = "Low"
+    else:
+        drowsiness_level = "None"
 
 # for module approach - not working
 # def generate_frames():
@@ -94,6 +116,20 @@ def generate_frames():
 #         return render_template('signup.html', username=session['username'])
 #     else:
 
+
+@app.route('/drowsiness_level')
+def get_drowsiness_level():
+    global drowsiness_level
+    return jsonify(level=drowsiness_level)
+
+@app.route('/control_camera', methods=['POST'])
+def control_camera():
+    global camera_on
+    if request.json and 'state' in request.json:
+        state = request.json['state']
+        camera_on = state == 'start'
+        return jsonify({"success": True, "state": camera_on})
+    return jsonify({"success": False})
 
 @app.route('/')
 def index():
@@ -135,6 +171,9 @@ def signup():
 
 @app.route('/video')
 def video():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    if camera_on:
+        return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    else:
+        return Response("Camera off", status=204)
 if __name__=='__main__':
     app.run(debug=True)

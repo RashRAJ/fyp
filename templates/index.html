@@ -1,15 +1,29 @@
 <!DOCTYPE html>
 <html>
-    <body>
-        <h1>live feed</h1>
-        {% if username %}
-        <p>hello, {{username}}! welcome</p>
-        <a href="/logout">logout</a>
-        {% else %}
-        <p>you are not logged in, please <a href="/login">Login</a> to access the homepage. </p>
-        {% endif %}
-        <div>
-            <img src="{{ url_for('video')}}" width="50%">
-        </div>
-    </body>
+<head>
+    <title>Drowsiness Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        // Declare the video URL here in a script tag to make it accessible in external JS
+        const videoURL = "{{ url_for('video') }}";
+    </script>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</head>
+<body>
+    <h1>Drowsiness Detection Live Feed</h1>
+    {% if username %}
+    <p>Hello, {{username}}! Welcome to the Drowsiness Detection System.</p>
+    <a href="/logout">Logout</a>
+    {% else %}
+    <p>You are not logged in. Please <a href="/login">Login</a> to access the system.</p>
+    {% endif %}
+    <div id="timerDisplay">00:00:00</div>
+    <div id="drowsinessLevelBox">Drowsiness Level: <span id="drowsinessLevel">None</span></div>
+    <button onclick="controlCamera('start')">Start Monitoring</button>
+    <button onclick="pauseTimer()">Pause Monitoring</button>
+    <button onclick="controlCamera('stop')">Stop Monitoring</button>
+    <div id="liveFeed">
+        <img id="videoFeed" width="50%" style="display: none;">
+    </div>
+</body>
 </html>
