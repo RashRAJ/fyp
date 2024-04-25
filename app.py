@@ -16,14 +16,31 @@ app=Flask(__name__)
 cors = CORS(app)
 app.secret_key = 'my-secret-key'
 
-#MYSQL Configuration
+# MYSQL Configuration
 # app.config['MYSQL_HOST'] = 'localhost'
 # app.config['MYSQL_USER'] = 'root'
 # app.config['MYSQL_PASSWORD'] = ''
 # app.config['MYSQL_DB'] = 'Drows_detectDB'
 
-# mysql = MySQL(app)
+# db = MySQL(app)
 
+
+################################### Login/signup section ##################################
+# class User(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     username = db.Column(db.String(50), nullable=False)
+#     password_hash = db.Column(db.String(100), nullable=False)
+#     email = db.Column(db.String(50), nullable=False)
+
+# @app.route('/api/user', methods=['POST'])
+# def create_user():
+#     data = request.json
+#     new_user = User(username=data['username'], email=data['email'], password_hash=data['password'])
+#     db.session.add(new_user)
+#     db.session.commit()
+#     return jsonify(message='User created successfully'), 201
+
+################################## Login/signup section ##################################
 
 camera_on = False
 eye_closure_timestamps = []
@@ -74,7 +91,7 @@ def generate_frames():
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                         cv2.putText(frame, "****************ALERT!****************", (10,325),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                        # mixer.music.play()
+                        mixer.music.play()
                 else:
                     flag = 0
                     mixer.music.pause()
@@ -98,25 +115,6 @@ def update_drowsiness_level():
         drowsiness_level = "Low"
     else:
         drowsiness_level = "None"
-
-# for module approach - not working
-# def generate_frames():
-#     print("In generate_frames")
-#     frame = detector.detector()
-#     yield (b'--frame\r\n'
-#                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-#     print("After detect")
-        
-
-# @app.route('/')
-# def signup():
-#     return render_template('signup.html')
-
-# @app.route('/signup')
-# def signup():
-#     if 'username' in session:
-#         return render_template('signup.html', username=session['username'])
-#     else:
 
 
 @app.route('/drowsiness_level')
@@ -145,7 +143,7 @@ def login():
     if request.method == 'POST': 
         username = request.form['username']
         pwd = request.form['password']
-        cur =   mysql.connection.cursor()
+        cur =   db.connection.cursor()
         cur.execute(f"select username, password from tbl users where username = '(username]'")
         user = cur. fetchone()
         cur.close()
@@ -156,18 +154,18 @@ def login():
             return render_template('login.html', error='Invalid username or password')
     return render_template('login.html')
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST' : 
-        username = request.form['username']
-        pwd = request.form['password']
-        cur = mysql.connection.cursor()
-        cur.execute(f"insert into tbl_users (username, password) values ('(username)', '(pwd)')") 
-        mysql.connection.commit () 
-        cur.close()
+# @app.route('/signup', methods=['GET', 'POST'])
+# def signup():
+#     if request.method == 'POST' : 
+#         username = request.form['username']
+#         pwd = request.form['password']
+#         cur = db.connection.cursor()
+#         cur.execute(f"insert into tbl_users (username, password) values ('(username)', '(pwd)')") 
+#         db.connection.commit () 
+#         cur.close()
 
-        return redirect(url_for ('login'))
-    return render_template('signup.html|')
+#         return redirect(url_for ('login'))
+#     return render_template('signup.html|')
 
 
 
