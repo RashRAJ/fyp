@@ -1,37 +1,24 @@
-from scipy.spatial import distance
-from imutils import face_utils
-from pygame import mixer
-import imutils
-import dlib
-import cv2
+import pytest
+import requests
 
+@pytest.mark.parametrize('data', [
+    {'username': 'test_user', 'email': 'test@example.com', 'password': 'password123'},
+    {'username': '', 'email': 'test@example.com', 'password': 'password123'},  # Invalid data
+])
+def test_create_user(data):
+    url = 'http://127.0.0.1:5000/api/user'
 
-def eye_aspect_ratio(eye):
-	A = distance.euclidean(eye[1], eye[5])
-	B = distance.euclidean(eye[2], eye[4])
-	C = distance.euclidean(eye[0], eye[3])
-	ear = (A + B) / (2.0 * C)
-	return ear
+    # Send POST request with data
+    response = requests.post(url, json=data)
 
+    # Validate response status code
+    assert response.status_code == 200
 
-(lStart, lEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["left_eye"]
-(rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
+    # Validate response content type
+    assert response.headers['Content-Type'] == 'application/json'
 
-detect = dlib.get_frontal_face_detector()
-predict = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
-cap = cv2.VideoCapture(0)
-
-while True:
-    ret, frame = cap.read()
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    subjects =  detect(gray, 0)
-    for subject in subjects:
-          shape = predict(gray, subjects)
-          shape = face_utils.shape_to_np(shape)
-
-    cv2.imshow("frame", frame)
-    cv2.waitKey(1)
-
-
-
-
+    # Validate response body (example)
+    if 'error' in response.json():
+        assert response.json()['error'] == 'Validation error'
+    else:
+        assert 'id' in response.json()

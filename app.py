@@ -1,11 +1,15 @@
 from flask import Flask, render_template, Response, redirect, url_for, session, request, jsonify
-# from flask_mysqldb import MySQL
+from flask_mysqldb import MySQL
 from flask_cors import CORS
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+from flask_sqlalchemy import SQLAlchemy
 import cv2
 import detector
 
 # from detector module
 from imutils import face_utils
+from datetime import date
 from pygame import mixer
 import imutils
 import dlib
@@ -16,33 +20,40 @@ app=Flask(__name__)
 cors = CORS(app)
 app.secret_key = 'my-secret-key'
 
-# MYSQL Configuration
-# app.config['MYSQL_HOST'] = 'localhost'
-# app.config['MYSQL_USER'] = 'root'
-# app.config['MYSQL_PASSWORD'] = ''
-# app.config['MYSQL_DB'] = 'Drows_detectDB'
-
-# db = MySQL(app)
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -DB SECTION- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://ddot:U5ruZqQG-2q29w-s@localhost/Drows_detectDB'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 
 ################################### Login/signup section ##################################
-# class User(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     username = db.Column(db.String(50), nullable=False)
-#     password_hash = db.Column(db.String(100), nullable=False)
-#     email = db.Column(db.String(50), nullable=False)
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(50), nullable=False)
 
-# @app.route('/api/user', methods=['POST'])
-# def create_user():
-#     data = request.json
-#     new_user = User(username=data['username'], email=data['email'], password_hash=data['password'])
-#     db.session.add(new_user)
-#     db.session.commit()
-#     return jsonify(message='User created successfully'), 201
 
-################################## Login/signup section ##################################
+class RideHistory(db.Model):
+    __tablename__ = 'RideHistory'
+    id = db.Column(db.Integer, primary_key=True)
+    ride_date = db.Column(db.Date, nullable=False)
+    ride_duration = db.Column(db.Time, nullable=False)  # Change the column type to TIME
+    alertness_level = db.Column(db.Integer, nullable=False)
+    drowsiness_level = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', backref='ride_histories')
 
+    def __repr__(self):
+        return f"RideHistory(ride_date='{self.ride_date}', ride_duration='{self.ride_duration}', " \
+               f"alertness_level='{self.alertness_level}', drowsiness_level='{self.drowsiness_level}')"
+################################## RIDE HISTORY section ##################################
+
+
+ride_date = date.today()
 camera_on = False
+start_time = None 
 eye_closure_timestamps = []
 drowsiness_level = "None"
 
@@ -122,14 +133,66 @@ def get_drowsiness_level():
     global drowsiness_level
     return jsonify(level=drowsiness_level)
 
+@app.route('/api/user', methods=['POST'])
+def create_user():
+    data = request.json
+    new_user = User(username=data['username'], email=data['email'], password=data['password'])
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify(message='User created successfully'), 201
+
+
 @app.route('/control_camera', methods=['POST'])
 def control_camera():
-    global camera_on
+    global camera_on, start_time  
     if request.json and 'state' in request.json:
         state = request.json['state']
-        camera_on = state == 'start'
+        if state == 'start':
+            camera_on = True
+            start_time = time.time()  
+        elif state == 'stop':
+            camera_on = False
+            if start_time is not None:
+                end_time = time.time()  
+                ride_duration_seconds = int(end_time - start_time) 
+                ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
+                start_time = None  
         return jsonify({"success": True, "state": camera_on})
     return jsonify({"success": False})
+
+
+
+@app.route('/api/ride_history', methods=['POST'])
+def create_ride_history():
+    data = request.json
+    user_id = data.get('user_id')
+    if user_id is None:
+        return jsonify(message='User ID is required'), 400
+
+    ride_duration = data.get('ride_duration')
+    drowsiness_level = data.get('drowsiness_level')
+
+    # Validate ride history data
+    if not all([ride_duration,  drowsiness_level]):
+        return jsonify(message='Incomplete ride history data'), 400
+
+    try:
+        # Create a new RideHistory object
+        new_ride_history = RideHistory(
+            ride_date=ride_date,
+            ride_duration=ride_duration,
+            drowsiness_level=drowsiness_level,
+            user_id=user_id
+        )
+
+        # Add the new ride history record to the database session
+        db.session.add(new_ride_history)
+        db.session.commit()
+
+        return jsonify(message='Ride history created successfully'), 201
+    except Exception as e:
+        return jsonify(message='Failed to create ride history', error=str(e)), 500
+
 
 @app.route('/')
 def index():
@@ -147,3 +210,8 @@ def video():
         return Response("Camera off", status=204)
 if __name__=='__main__':
     app.run(debug=True)
+
+
+
+
+
