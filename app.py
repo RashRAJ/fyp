@@ -4,12 +4,14 @@ from flask_cors import CORS
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash
+import jwt
 import cv2
 import detector
 
 # from detector module
 from imutils import face_utils
-from datetime import date
+from datetime import date, timedelta, datetime
 from pygame import mixer
 import imutils
 import dlib
@@ -33,6 +35,16 @@ class User(db.Model):
     username = db.Column(db.String(50), nullable=False)
     password = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(50), nullable=False)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+
+    def generate_token(self):
+        payload = {
+            'user_id': self.id,
+            'exp': datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+        }
+        return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
 
 
 class RideHistory(db.Model):
@@ -140,6 +152,21 @@ def create_user():
     db.session.add(new_user)
     db.session.commit()
     return jsonify(message='User created successfully'), 201
+
+@app.route('/api/signin', methods=['POST'])
+def signin():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user or not user.check_password(password):
+        return jsonify(message='Invalid email or password'), 401
+
+    token = user.generate_token()
+
+    return jsonify(token=token), 200
 
 
 @app.route('/control_camera', methods=['POST'])

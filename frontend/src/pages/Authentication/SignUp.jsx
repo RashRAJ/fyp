@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import Layout from "./Layout";
 import InputWithIcon from "../../components/InputWithIcon";
 import { useState } from "react";
@@ -22,11 +23,14 @@ function SignUp() {
     setLoading(true)
     try{
       //sends the request with credentials
-      const response = axios.post('http://localhost:5000/api/user',{
+      const response = axios.post('http://127.0.0.1:5000/api/user',{
         username, 
         email,
         password,
-      })
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },})
       return response
     }catch(err){
       //if there's an error, we log it to our console. 

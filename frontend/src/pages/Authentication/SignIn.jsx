@@ -5,14 +5,57 @@ import { useState } from "react";
 import { User, Key, Eye, EyeSlash } from "iconsax-react";
 import axios from "axios"
 
+// function SignIn() {
+//   const navigate = useNavigate();
+//   const [showPassword, setShowPassword] = useState(false);
+//   const [loading, setLoading] = useState(false)
+//   const handleShowPassword = () => {
+  
+//     setShowPassword(!showPassword);
+//   };
+
+
+
 function SignIn() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const handleShowPassword = () => {
-  
     setShowPassword(!showPassword);
   };
+
+  const handleSignIn = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:5000/api/signin",
+        {
+          email,
+          password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      // Assuming your backend returns a token upon successful login
+      const token = response.data.token;
+      // Store the token in localStorage or session storage for future requests
+      localStorage.setItem("token", token);
+      // Redirect the user to the desired page
+      navigate("/home");
+    } catch (error) {
+      console.error(error);
+      // Handle error (e.g., display an error message)
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
 
   return (
