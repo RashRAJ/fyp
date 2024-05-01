@@ -64,7 +64,6 @@ class RideHistory(db.Model):
                f"alertness_level='{self.alertness_level}', drowsiness_level='{self.drowsiness_level}')"
 ################################## RIDE HISTORY section ##################################
 
-
 ride_date = date.today()
 camera_on = False
 start_time = None 
@@ -142,11 +141,6 @@ def update_drowsiness_level():
         drowsiness_level = "None"
 
 
-@app.route('/drowsiness_level')
-def get_drowsiness_level():
-    global drowsiness_level
-    return jsonify(level=drowsiness_level)
-
 @app.route('/api/user', methods=['POST'])
 def create_user():
     data = request.json
@@ -154,6 +148,8 @@ def create_user():
     db.session.add(new_user)
     db.session.commit()
     return jsonify(message='User created successfully'), 201
+
+
 
 @app.route('/api/signin', methods=['POST'])
 def signin():
@@ -169,6 +165,12 @@ def signin():
     token = user.generate_token()
 
     return jsonify(token=token), 200
+
+
+@app.route('/drowsiness_level')
+def get_drowsiness_level():
+    global drowsiness_level
+    return jsonify(level=drowsiness_level)
 
 
 @app.route('/control_camera', methods=['POST'])
