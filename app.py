@@ -20,11 +20,12 @@ import time
 
 app=Flask(__name__)
 cors = CORS(app)
-app.secret_key = 'my-secret-key'
+app.secret_key = '6d7311d50a781c48949e47b8cb1958493b8693bdd4ce3b234cf7adb858ae625f'
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -DB SECTION- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://ddot:U5ruZqQG-2q29w-s@localhost/Drows_detectDB'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = '6d7311d50a781c48949e47b8cb1958493b8693bdd4ce3b234cf7adb858ae625f'
 db = SQLAlchemy(app)
 
 
@@ -33,8 +34,18 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False)
-    password_hash = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(50), nullable=False)
+
+    def generate_token(self):
+        # Define payload with user ID and expiration time
+        payload = {
+            'user_id': self.id,
+            'exp': datetime.utcnow() + timedelta(days=1)  # Token expiration time (e.g., 1 day)
+        }
+        # Generate JWT token with payload and secret key
+        token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+        return token  
 
     @property
     def password(self):
@@ -144,7 +155,8 @@ def update_drowsiness_level():
 @app.route('/api/user', methods=['POST'])
 def create_user():
     data = request.json
-    new_user = User(username=data['username'], email=data['email'], password_hash=data['password'])
+    password_hash = generate_password_hash(data['password'])
+    new_user = User(username=data['username'], email=data['email'], password_hash=password_hash)
     db.session.add(new_user)
     db.session.commit()
     return jsonify(message='User created successfully'), 201
@@ -159,12 +171,15 @@ def signin():
 
     user = User.query.filter_by(email=email).first()
 
-    if not user or not user.verify_password(password):
-        return jsonify(message='Invalid email or password'), 401
+    if not user:
+        return jsonify(message='User does not exist'), 401
+
+    if not user.verify_password(password):
+        return jsonify(message='Invalid password'), 401
 
     token = user.generate_token()
 
-    return jsonify(token=token), 200
+    return jsonify(token=token, username=user.username), 200
 
 
 @app.route('/drowsiness_level')

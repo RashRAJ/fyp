@@ -4,7 +4,7 @@ import React from "react";
 import axios from "axios";
 import {Play } from "iconsax-react";
 
-const CameraControl = ({ videoStreamUrl}) => {
+const CameraControl = ({ videoStreamUrl, name}) => {
 
   const startCamera = () => {
     // Start the camera via Flask API
@@ -22,7 +22,7 @@ const CameraControl = ({ videoStreamUrl}) => {
         <div className="h-16 w-16 bg-gray-200 rounded-full"></div>
         <div className="flex gap-10 items-end">
           <div>
-            <h3 className="font-black text-4xl">Hi, John</h3>
+            <h3 className="font-black text-4xl">Hi, {name}</h3>
             <span className="flex text-gray-700 gap-2">
               <Calendar /> You're doing great! 2 hours driven
             </span>

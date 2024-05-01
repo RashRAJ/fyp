@@ -8,6 +8,8 @@ import axios from "axios";
 function Home({ src }) {
   const [level, setLevel] = useState("None");
   const [timer, setTimer] = useState(0);
+  const user=localStorage.getItem('user');
+  console.log(user)
 
   const formatTime = (seconds) => {
     const hrs = Math.floor(seconds / 3600);
@@ -38,7 +40,7 @@ function Home({ src }) {
           <CameraControl timer={timer} setTimer={setTimer} />
         </div>
         <div>
-          <UserDetails />
+          <UserDetails name={user} />
           <Card>
             <div className="grid grid-cols-2 py-6">
               <h4 className="font-bold text-lg">Alertness Level</h4>

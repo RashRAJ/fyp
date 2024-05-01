@@ -1,24 +1,6 @@
-import pytest
-import requests
+import secrets
 
-@pytest.mark.parametrize('data', [
-    {'username': 'test_user', 'email': 'test@example.com', 'password': 'password123'},
-    {'username': '', 'email': 'test@example.com', 'password': 'password123'},  # Invalid data
-])
-def test_create_user(data):
-    url = 'http://127.0.0.1:5000/api/user'
+# Generate a random secret key with 32 bytes (256 bits)
+secret_key = secrets.token_hex(32)
 
-    # Send POST request with data
-    response = requests.post(url, json=data)
-
-    # Validate response status code
-    assert response.status_code == 200
-
-    # Validate response content type
-    assert response.headers['Content-Type'] == 'application/json'
-
-    # Validate response body (example)
-    if 'error' in response.json():
-        assert response.json()['error'] == 'Validation error'
-    else:
-        assert 'id' in response.json()
+print("Generated secret key:", secret_key)

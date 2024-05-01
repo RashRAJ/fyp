@@ -43,9 +43,11 @@ function SignIn() {
         }
       );
       // Assuming your backend returns a token upon successful login
-      const token = response.data.token;
+      // const token = response.data.token;
+      const user = response.data.username
+      console.log(user)
       // Store the token in localStorage or session storage for future requests
-      localStorage.setItem("token", token);
+      localStorage.setItem('user', user)
       // Redirect the user to the desired page
       navigate("/home");
     } catch (error) {
@@ -64,15 +66,15 @@ function SignIn() {
         <div className="flex items-center justify-center gap-5 flex-col h-full">
           <h3 className="font-black text-2xl">Sign In</h3>
           <h3 className="text-center text-sm text-slate-500">Sign in with your email and password to continue.</h3>
-          <InputWithIcon placeholder="Email" leftIcon={<User className="text-gray-500" />}  />
-          <InputWithIcon
+          <InputWithIcon onChange = {(e)=>{setEmail(e.target.value)}} placeholder="Email" leftIcon={<User className="text-gray-500" />}  />
+          <InputWithIcon onChange = {(e)=>{setPassword(e.target.value)}}
             placeholder="Password"
             type={showPassword ? "text" : "password"}
             leftIcon={<Key className="text-gray-500" />}
             rightIcon={showPassword ? <EyeSlash className="text-gray-500" /> : <Eye className="text-gray-500" />}
             handleRightIconClick={handleShowPassword}
           />
-          <button  type="button" className="bg-black text-white font-black opacity-100 w-full border-gray-300 border py-3 rounded-md ">
+          <button onClick={handleSignIn} type="button" className="bg-black text-white font-black opacity-100 w-full border-gray-300 border py-3 rounded-md ">
             {
               //if loading is true, show our loader spinner
               loading &&
