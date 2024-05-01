@@ -54,8 +54,8 @@ class RideHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ride_date = db.Column(db.Date, nullable=False)
     ride_duration = db.Column(db.Time, nullable=False)  # Change the column type to TIME
-    alertness_level = db.Column(db.Integer, nullable=False)
-    drowsiness_level = db.Column(db.Integer, nullable=False)
+    # alertness_level = db.Column(db.Integer, nullable=False)
+    drowsiness_level = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship('User', backref='ride_histories')
 
@@ -175,7 +175,7 @@ def get_drowsiness_level():
 
 @app.route('/control_camera', methods=['POST'])
 def control_camera():
-    global camera_on, start_time  
+    global camera_on, start_time, end_time, ride_duration 
     if request.json and 'state' in request.json:
         state = request.json['state']
         if state == 'start':
@@ -183,8 +183,8 @@ def control_camera():
             start_time = time.time()  
         elif state == 'stop':
             camera_on = False
-            if start_time is not None:
-                end_time = time.time()  
+            end_time = time.time()
+            if start_time is not None:  
                 ride_duration_seconds = int(end_time - start_time) 
                 ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
                 start_time = None  
@@ -193,36 +193,23 @@ def control_camera():
 
 
 
-@app.route('/api/ride_history', methods=['POST'])
-def create_ride_history():
-    data = request.json
-    user_id = data.get('user_id')
-    if user_id is None:
-        return jsonify(message='User ID is required'), 400
 
-    ride_duration = data.get('ride_duration')
-    drowsiness_level = data.get('drowsiness_level')
-
-    # Validate ride history data
-    if not all([ride_duration,  drowsiness_level]):
-        return jsonify(message='Incomplete ride history data'), 400
-
+@app.route('/api/ride_history/<int:user_id>', methods=['GET'])
+def get_ride_history(user_id):
     try:
-        # Create a new RideHistory object
-        new_ride_history = RideHistory(
-            ride_date=ride_date,
-            ride_duration=ride_duration,
-            drowsiness_level=drowsiness_level,
-            user_id=user_id
-        )
-
-        # Add the new ride history record to the database session
-        db.session.add(new_ride_history)
-        db.session.commit()
-
-        return jsonify(message='Ride history created successfully'), 201
+        ride_histories = RideHistory.query.filter_by(user_id=user_id).all()
+        ride_history_data = []
+        for ride_history in ride_histories:
+            ride_history_data.append({
+                'id': ride_history.id,
+                'ride_date': ride_history.ride_date,
+                'ride_duration': str(ride_history.ride_duration),  # Convert to string
+                'drowsiness_level': ride_history.drowsiness_level
+            })
+        return jsonify(ride_history_data), 200
     except Exception as e:
-        return jsonify(message='Failed to create ride history', error=str(e)), 500
+        return jsonify(message='Failed to retrieve ride history', error=str(e)), 500
+
 
 
 @app.route('/')
