@@ -4,7 +4,7 @@ from flask_cors import CORS
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 import jwt
 import cv2
 import detector
@@ -33,18 +33,20 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(50), nullable=False)
 
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
+    @property
+    def password(self):
+        raise AttributeError('Password is not a readable attribute')
 
-    def generate_token(self):
-        payload = {
-            'user_id': self.id,
-            'exp': datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
-        }
-        return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    # Method to verify password
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class RideHistory(db.Model):
@@ -148,7 +150,7 @@ def get_drowsiness_level():
 @app.route('/api/user', methods=['POST'])
 def create_user():
     data = request.json
-    new_user = User(username=data['username'], email=data['email'], password=data['password'])
+    new_user = User(username=data['username'], email=data['email'], password_hash=data['password'])
     db.session.add(new_user)
     db.session.commit()
     return jsonify(message='User created successfully'), 201
@@ -161,7 +163,7 @@ def signin():
 
     user = User.query.filter_by(email=email).first()
 
-    if not user or not user.check_password(password):
+    if not user or not user.verify_password(password):
         return jsonify(message='Invalid email or password'), 401
 
     token = user.generate_token()

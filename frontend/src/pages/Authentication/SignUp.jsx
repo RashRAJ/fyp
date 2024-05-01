@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Link, useHistory } from "react-router-dom";
+// import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "./Layout";
 import InputWithIcon from "../../components/InputWithIcon";
 import { useState } from "react";
@@ -7,42 +7,46 @@ import { User, Key, Eye, EyeSlash } from "iconsax-react";
 import axios from "axios";
 
 function SignUp() {
+  const navigate = useNavigate(); 
   const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const handleShowPassword = () => {
     setShowPassword(!showPassword);
   };
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
 
-
-
-  function handleSignUp(){
+  function handleSignUp() {
     console.log ({username, email, password})
     setLoading(true)
-    try{
-      //sends the request with credentials
-      const response = axios.post('http://127.0.0.1:5000/api/user',{
+    try {
+      // Send the request with credentials
+      const response = axios.post('http://127.0.0.1:5000/api/user', {
         username, 
         email,
         password,
       }, {
         headers: {
           'Content-Type': 'application/json',
-        },})
-      return response
-    }catch(err){
-      //if there's an error, we log it to our console. 
-      console.error(err)
-    }finally{
-      //whatever happens at the end, we should stop our loader 
-      setLoading(false)
+        },
+      });
+      
+      // Once the user is created successfully, navigate to the next page
+      response.then(() => {
+        navigate('/home'); // Navigate to the next page
+      });
+      
+      return response;
+    } catch(err) {
+      // Log error to console
+      console.error(err);
+    } finally {
+      // Stop loader
+      setLoading(false);
     }
-
   }
-
-
 
   return (
     <Layout>
