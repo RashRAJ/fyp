@@ -235,6 +235,7 @@ def control_camera():
             ride_duration_seconds = int(end_time - start_time) 
             ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
             
+            update_drowsiness_level()
             print(user_id, "RideHistory")
             if user_id:
                 ride_history = RideHistory(

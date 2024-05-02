@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Pause, Play } from "iconsax-react";
 
-const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn }) => {
+const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn, handleCameraToggle }) => {
   const [timerActive, setTimerActive] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
 
@@ -11,7 +11,7 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn 
     axios
       .post("http://127.0.0.1:5000/control_camera", { state: "start" })
       .then((response) => {
-        setCameraOn(true);
+        handleCameraToggle(true);
         console.log(response)
       })
       .catch((error) => console.error("Error starting camera:", error));
@@ -25,21 +25,21 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn 
     }
   };
 
-  const pauseCamera = () => {
-    // Pause the camera via Flask API (if applicable)
-    axios
-      .post("http://127.0.0.1:5000/control_camera", { state: "stop" })
-      .then((response) => 
-      {
-      console.log(response)
-      })
-      .catch((error) => console.error("Error stopping camera:", error));
-    // Pause the timer
-    if (timerActive) {
-      clearInterval(intervalId);
-      setTimerActive(false);
-    }
-  };
+  // const pauseCamera = () => {
+  //   // Pause the camera via Flask API (if applicable)
+  //   axios
+  //     .post("http://127.0.0.1:5000/control_camera", { state: "stop" })
+  //     .then((response) => 
+  //     {
+  //     console.log(response)
+  //     })
+  //     .catch((error) => console.error("Error stopping camera:", error));
+  //   // Pause the timer
+  //   if (timerActive) {
+  //     clearInterval(intervalId);
+  //     setTimerActive(false);
+  //   }
+  // };
 
   const stopCamera = () => {
     // Stop the camera via Flask API
@@ -47,7 +47,7 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn 
       .post("http://127.0.0.1:5000/control_camera", { state: "stop" })
       .then((response) => {
         console.log(response)
-        setCameraOn(false);
+        handleCameraToggle(false);
       })
       .catch((error) => console.error("Error stopping camera:", error));
     // Stop and reset the timer

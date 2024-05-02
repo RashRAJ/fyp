@@ -9,6 +9,7 @@ function Home({ src }) {
   const [level, setLevel] = useState("None");
   const [timer, setTimer] = useState(0);
   const [cameraOn, setCameraOn] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const user=localStorage.getItem('user');
   console.log(user)
 
@@ -34,17 +35,28 @@ function Home({ src }) {
     console.log("cameraOn:", cameraOn);
   }, [cameraOn]);
 
+  const handleCameraToggle = (status) => {
+    setCameraOn(status);
+    setRefreshKey(refreshKey + 1);
+  };
+
   return (
     <div className="p-4">
       <div className="grid grid-cols-2 gap-10">
         <div>
         {cameraOn && (
           <div className="h-100 w-full bg-gray-300 rounded-md mb-5 relative">
-            <img src={src} alt="Live Feed" className="object-cover w-full h-full rounded-md" />{" "}
+            <img key={refreshKey} src={`${src}?key=${refreshKey}`} alt="Live Feed" className="object-cover w-full h-full rounded-md" />{" "}
             <span className="absolute top-5 left-[45%] bg-gray-900 text-white  py-1 px-4  rounded-xl ">{formatTime(timer)}</span>
           </div>
           )}
-          <CameraControl timer={timer} setTimer={setTimer} cameraOn={cameraOn} setCameraOn={setCameraOn} />
+          <CameraControl 
+            timer={timer} 
+            setTimer={setTimer} 
+            cameraOn={cameraOn} 
+            setCameraOn={setCameraOn}
+            handleCameraToggle={handleCameraToggle}
+            />
         </div>
         <div>
           <UserDetails name={user} />
