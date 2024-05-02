@@ -10,7 +10,10 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn 
     // Start the camera via Flask API
     axios
       .post("http://127.0.0.1:5000/control_camera", { state: "start" })
-      .then((response) => console.log(response))
+      .then((response) => {
+        setCameraOn(true);
+        console.log(response)
+      })
       .catch((error) => console.error("Error starting camera:", error));
     // Start the timer
     if (!timerActive) {
@@ -19,7 +22,6 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn 
       }, 1000);
       setIntervalId(id);
       setTimerActive(true);
-      setCameraOn(true);
     }
   };
 
@@ -30,7 +32,6 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn 
       .then((response) => 
       {
       console.log(response)
-      setCameraOn(true);
       })
       .catch((error) => console.error("Error stopping camera:", error));
     // Pause the timer
