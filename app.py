@@ -235,15 +235,18 @@ def control_camera():
             ride_duration_seconds = int(end_time - start_time) 
             ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
             
-            print(user_id)
-            ride_history = RideHistory(
-                ride_date=date.today(),
-                ride_duration=ride_duration,
-                drowsiness_level=drowsiness_level,
-                user_id=user_id
-            )
-            db.session.add(ride_history)
-            db.session.commit()
+            print(user_id, "RideHistory")
+            if user_id:
+                ride_history = RideHistory(
+                    ride_date=date.today(),
+                    ride_duration=ride_duration,
+                    drowsiness_level=drowsiness_level,
+                    user_id=user_id
+                )
+                db.session.add(ride_history)
+                db.session.commit()
+            else:
+                print("invalid user id : did not save")
 
 
             if start_time is not None: 
