@@ -8,6 +8,7 @@ import axios from "axios";
 function Home({ src }) {
   const [level, setLevel] = useState("None");
   const [timer, setTimer] = useState(0);
+  const [cameraOn, setCameraOn] = useState(false);
   const user=localStorage.getItem('user');
   console.log(user)
 
@@ -29,15 +30,21 @@ function Home({ src }) {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    console.log("cameraOn:", cameraOn);
+  }, [cameraOn]);
+
   return (
     <div className="p-4">
       <div className="grid grid-cols-2 gap-10">
         <div>
+        {cameraOn && (
           <div className="h-100 w-full bg-gray-300 rounded-md mb-5 relative">
             <img src={src} alt="Live Feed" className="object-cover w-full h-full rounded-md" />{" "}
             <span className="absolute top-5 left-[45%] bg-gray-900 text-white  py-1 px-4  rounded-xl ">{formatTime(timer)}</span>
           </div>
-          <CameraControl timer={timer} setTimer={setTimer} />
+          )}
+          <CameraControl timer={timer} setTimer={setTimer} cameraOn={cameraOn} setCameraOn={setCameraOn} />
         </div>
         <div>
           <UserDetails name={user} />

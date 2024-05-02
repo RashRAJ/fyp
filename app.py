@@ -94,6 +94,9 @@ def generate_frames():
     (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
 
     flag=0
+    eyes_closed = False 
+    closure_start_time = None
+    last_update_time = None
     while camera_on and camera.isOpened():
         success, frame = camera.read()
         if not success:
@@ -116,12 +119,15 @@ def generate_frames():
                 cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
                 if ear < thresh:
                     flag += 1
+                    if not eyes_closed:
+                        eyes_closed = True
+                        closure_start_time = time.time()
                     # print (flag)
-                    current_time = time.time()
-                    print(current_time)
-                    eye_closure_timestamps.append(current_time)
-                    eye_closure_timestamps = [t for t in eye_closure_timestamps if current_time - t <= 60]
-                    print(eye_closure_timestamps)
+                    # current_time = time.time()
+                    # print(current_time)
+                    # eye_closure_timestamps.append(current_time)
+                    # eye_closure_timestamps = [t for t in eye_closure_timestamps if current_time - t <= 60]
+                    # print(eye_closure_timestamps)
                     if flag >= frame_check:
                         cv2.putText(frame, "****************ALERT!****************", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
@@ -131,6 +137,15 @@ def generate_frames():
                 else:
                     flag = 0
                     mixer.music.pause()
+                    if eyes_closed:
+                        if closure_start_time is not None:
+                            duration = time.time() - closure_start_time
+                            if duration >= 1.0:  
+                                current_time = int(closure_start_time)
+                                if current_time != last_update_time:
+                                    eye_closure_timestamps.append(current_time)
+                                    last_update_time = current_time
+                        eyes_closed = False
             # cv2.imshow("Frame", frame)
             ret, buffer = cv2.imencode(".jpg", frame)
             frame = buffer.tobytes()
@@ -138,6 +153,10 @@ def generate_frames():
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         # camera.release()
     
+    current_time = time.time()
+    eye_closure_timestamps = [t for t in eye_closure_timestamps if current_time - t <= 60]
+    print(eye_closure_timestamps)
+
     update_drowsiness_level()
 
 def update_drowsiness_level():

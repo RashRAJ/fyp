@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Pause, Play } from "iconsax-react";
 
-const CameraControl = ({ videoStreamUrl, timer, setTimer }) => {
+const CameraControl = ({ videoStreamUrl, timer, setTimer, cameraOn, setCameraOn }) => {
   const [timerActive, setTimerActive] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
 
@@ -19,6 +19,7 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer }) => {
       }, 1000);
       setIntervalId(id);
       setTimerActive(true);
+      setCameraOn(true);
     }
   };
 
@@ -26,7 +27,11 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer }) => {
     // Pause the camera via Flask API (if applicable)
     axios
       .post("http://127.0.0.1:5000/control_camera", { state: "stop" })
-      .then((response) => console.log(response))
+      .then((response) => 
+      {
+      console.log(response)
+      setCameraOn(true);
+      })
       .catch((error) => console.error("Error stopping camera:", error));
     // Pause the timer
     if (timerActive) {
@@ -39,7 +44,10 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer }) => {
     // Stop the camera via Flask API
     axios
       .post("http://127.0.0.1:5000/control_camera", { state: "stop" })
-      .then((response) => console.log(response))
+      .then((response) => {
+        console.log(response)
+        setCameraOn(false);
+      })
       .catch((error) => console.error("Error stopping camera:", error));
     // Stop and reset the timer
     if (timerActive) {
@@ -52,7 +60,6 @@ const CameraControl = ({ videoStreamUrl, timer, setTimer }) => {
   return (
     <div className="grid grid-cols-2 gap-2">
       <button onClick={startCamera} className="flex justify-center gap-2 font-semibold bg-gray-900 text-white border border-black py-1 rounded-md w-full hover:bg-black transition-all">
-        {" "}
         <Play /> Start Camera
       </button>
       <button onClick={stopCamera} className="flex justify-center gap-2 font-semibold bg-transparent border border-gray-300 py-1 rounded-md w-full hover:bg-gray-100 transition-all">
