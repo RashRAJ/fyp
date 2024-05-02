@@ -80,6 +80,7 @@ camera_on = False
 start_time = None 
 eye_closure_timestamps = []
 drowsiness_level = "None"
+user_id = ""
 
 def generate_frames():
     global camera_on, eye_closure_timestamps
@@ -140,8 +141,10 @@ def generate_frames():
     update_drowsiness_level()
 
 def update_drowsiness_level():
+    print("update_drowsiness_level")
     global drowsiness_level, eye_closure_timestamps
     count = len(eye_closure_timestamps)
+    print("update_drowsiness_level", count)
     if count >= 25:
         drowsiness_level = "Critical"
     elif count >= 15:
@@ -150,11 +153,11 @@ def update_drowsiness_level():
         drowsiness_level = "Low"
     else:
         drowsiness_level = "None"
-
+    print("update_drowsiness", drowsiness_level)
 
 @app.route('/api/user', methods=['POST'])
 def create_user():
-
+    global user_id
     data = request.json
     password_hash = generate_password_hash(data['password'])
     new_user = User(username=data['username'], email=data['email'], password_hash=password_hash)
@@ -163,7 +166,7 @@ def create_user():
 
     session['user_id'] = new_user.id
     user_id = session.get('user_id')
-    print(user_id)
+    print(user_id, 'signup')
 
 
     return jsonify(user_id=user_id, message='User created successfully'), 201
@@ -171,6 +174,7 @@ def create_user():
 
 @app.route('/api/signin', methods=['POST'])
 def signin():
+    global user_id
     data = request.json
     email = data.get('email')
     password = data.get('password')
@@ -185,7 +189,7 @@ def signin():
     
     session['user_id'] = user.id
     user_id = session.get('user_id')
-    print(user_id)
+    print(user_id, 'signin')
 
     token = user.generate_token()
 
@@ -200,7 +204,7 @@ def get_drowsiness_level():
 
 @app.route('/control_camera', methods=['POST'])
 def control_camera():
-    global camera_on, start_time, end_time, ride_duration 
+    global camera_on, start_time, end_time, ride_duration, user_id
     if request.json and 'state' in request.json:
         state = request.json['state']
         if state == 'start':
@@ -212,17 +216,15 @@ def control_camera():
             ride_duration_seconds = int(end_time - start_time) 
             ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
             
-            user_id = session.get('user_id')
             print(user_id)
-
-            # ride_history = RideHistory(
-            #     ride_date=date.today(),
-            #     ride_duration=ride_duration,
-            #     drowsiness_level=drowsiness_level,
-            #     user_id=user_id
-            # )
-            # db.session.add(ride_history)
-            # db.session.commit()
+            ride_history = RideHistory(
+                ride_date=date.today(),
+                ride_duration=ride_duration,
+                drowsiness_level=drowsiness_level,
+                user_id=user_id
+            )
+            db.session.add(ride_history)
+            db.session.commit()
 
 
             if start_time is not None: 
