@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, redirect, url_for, session, request, jsonify
+from flask import Flask, render_template, Response, redirect, url_for, session, request, jsonify, g
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 from sqlalchemy import ForeignKey
@@ -154,13 +154,19 @@ def update_drowsiness_level():
 
 @app.route('/api/user', methods=['POST'])
 def create_user():
+
     data = request.json
     password_hash = generate_password_hash(data['password'])
     new_user = User(username=data['username'], email=data['email'], password_hash=password_hash)
     db.session.add(new_user)
     db.session.commit()
-    return jsonify(message='User created successfully'), 201
 
+    session['user_id'] = new_user.id
+    user_id = session.get('user_id')
+    print(user_id)
+
+
+    return jsonify(user_id=user_id, message='User created successfully'), 201
 
 
 @app.route('/api/signin', methods=['POST'])
@@ -176,6 +182,10 @@ def signin():
 
     if not user.verify_password(password):
         return jsonify(message='Invalid password'), 401
+    
+    session['user_id'] = user.id
+    user_id = session.get('user_id')
+    print(user_id)
 
     token = user.generate_token()
 
@@ -199,9 +209,23 @@ def control_camera():
         elif state == 'stop':
             camera_on = False
             end_time = time.time()
-            if start_time is not None:  
-                ride_duration_seconds = int(end_time - start_time) 
-                ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
+            ride_duration_seconds = int(end_time - start_time) 
+            ride_duration = time.strftime('%H:%M:%S', time.gmtime(ride_duration_seconds)) 
+            
+            user_id = session.get('user_id')
+            print(user_id)
+
+            # ride_history = RideHistory(
+            #     ride_date=date.today(),
+            #     ride_duration=ride_duration,
+            #     drowsiness_level=drowsiness_level,
+            #     user_id=user_id
+            # )
+            # db.session.add(ride_history)
+            # db.session.commit()
+
+
+            if start_time is not None: 
                 start_time = None  
         return jsonify({"success": True, "state": camera_on})
     return jsonify({"success": False})
@@ -209,14 +233,17 @@ def control_camera():
 
 
 
-@app.route('/api/ride_history/<int:user_id>', methods=['GET'])
-def get_ride_history(user_id):
+
+
+@app.route('/api/ride_history', methods=['GET'])
+def get_ride_history():
     try:
+        user_id = session.get('user_id')
+
         ride_histories = RideHistory.query.filter_by(user_id=user_id).all()
         ride_history_data = []
         for ride_history in ride_histories:
             ride_history_data.append({
-                'id': ride_history.id,
                 'ride_date': ride_history.ride_date,
                 'ride_duration': str(ride_history.ride_duration),  # Convert to string
                 'drowsiness_level': ride_history.drowsiness_level
