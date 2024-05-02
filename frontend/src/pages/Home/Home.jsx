@@ -7,6 +7,7 @@ import axios from "axios";
 
 function Home({ src }) {
   const [level, setLevel] = useState("None");
+  const [alertnessLevel, setAlertnessLevel] = useState(100);
   const [timer, setTimer] = useState(0);
   const [cameraOn, setCameraOn] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -25,6 +26,7 @@ function Home({ src }) {
         .get("http://127.0.0.1:5000/drowsiness_level")
         .then((response) => {
           setLevel(response.data.level);
+          setAlertnessLevel(mapDrowsinessToAlertness(response.data.level));
         })
         .catch((error) => console.error("Error fetching drowsiness level:", error));
     }, 10000);
@@ -38,6 +40,21 @@ function Home({ src }) {
   const handleCameraToggle = (status) => {
     setCameraOn(status);
     setRefreshKey(refreshKey + 1);
+  };
+
+  const mapDrowsinessToAlertness = (drowsiness) => {
+    switch (drowsiness) {
+      case "None":
+        return 100;
+      case "Low":
+        return 70;
+      case "Major":
+        return 50;
+      case "Critical":
+        return 30;
+      default:
+        return 100;
+    }
   };
 
   return (
@@ -66,7 +83,7 @@ function Home({ src }) {
               <button className="font-semibold bg-transparent border border-gray-300 py-1 rounded-md w-full hover:bg-gray-100 transition-all">Calibrate</button>
             </div>
             <div className="flex items-center gap-2 py-6">
-              <Sun1 size="35" /> <h1 className="font-bold text-5xl">92%</h1>
+              <Sun1 size="35" /> <h1 className="font-bold text-5xl">{alertnessLevel}%</h1>
             </div>
           </Card>
           <Card>
